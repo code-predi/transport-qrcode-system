@@ -24,3 +24,53 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+@media print {
+
+  body * {
+    visibility: hidden;
+  }
+
+  #print-card, #print-card * {
+    visibility: visible;
+  }
+
+  #print-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+}
+
+/* PRINT OPTIMIZATION */
+@media print {
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #print-container, #print-container * {
+    visibility: visible;
+  }
+
+  #print-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  @page {
+    size: auto;
+    margin: 0;
+  }
+
+}
