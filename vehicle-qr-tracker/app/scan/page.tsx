@@ -1,75 +1,99 @@
 'use client'
 
-import { useState } from 'react'
-import QRCode from 'qrcode'
+import { useEffect, useRef, useState } from 'react'
+import { Html5Qrcode } from 'html5-qrcode'
+import { useRouter } from 'next/navigation'
 
-export default function RegisterPage() {
+export default function ScanPage() {
 
-  const [plateNumber, setPlateNumber] = useState('')
-  const [carModel, setCarModel] = useState('')
-  const [driverName, setDriverName] = useState('')
+  const router = useRouter()
 
-  const [qrCode, setQrCode] = useState('')
-  const [vehicleId, setVehicleId] = useState('')
+  const scannerRef = useRef<Html5Qrcode | null>(null)
 
-  const [loading, setLoading] = useState(false)
+  const [started, setStarted] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+
+    startScanner()
+
+    return () => {
+      stopScanner()
+    }
+
+  }, [])
 
 
-  const registerVehicle = async () => {
+  const startScanner = async () => {
 
     try {
 
-      setLoading(true)
       setError('')
+      setLoading(true)
 
-      if (!plateNumber || !carModel || !driverName) {
-        setError("Please fill all fields")
-        setLoading(false)
-        return
-      }
+      const scanner = new Html5Qrcode("reader")
 
-      const res = await fetch('/api/vehicles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+      scannerRef.current = scanner
+
+      await scanner.start(
+
+        // FORCE BACK CAMERA
+        { facingMode: { exact: "environment" } },
+
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          },
+          aspectRatio: 1
         },
-        body: JSON.stringify({
-          plateNumber,
-          carModel,
-          driverName
-        })
-      })
 
-      const data = await res.json()
+        // SUCCESS
+        (decodedText) => {
 
-      if (!res.ok) {
-        setError(data.error || "Failed to register vehicle")
-        setLoading(false)
-        return
-      }
+          stopScanner()
 
-      const baseUrl =
-        process.env.NEXT_PUBLIC_BASE_URL ||
-        window.location.origin
+          try {
 
-      const qrUrl =
-        `${baseUrl}/scan?vehicleId=${data.id}`
+            const url = new URL(decodedText)
 
-      const qrImage =
-        await QRCode.toDataURL(qrUrl)
+            const vehicleId =
+              url.searchParams.get("vehicleId")
 
-      setQrCode(qrImage)
-      setVehicleId(data.id)
+            if (vehicleId) {
+
+              router.push(`/scan?vehicleId=${vehicleId}`)
+
+            }
+
+          } catch {
+
+            alert("Invalid QR code")
+
+          }
+
+        },
+
+        // REQUIRED ERROR CALLBACK
+        (err) => {
+          // ignore scanning errors
+        }
+
+      )
+
+      setStarted(true)
+      setLoading(false)
 
     }
     catch (err) {
 
       console.error(err)
-      setError("Unexpected error occurred")
 
-    }
-    finally {
+      setError(
+        "Camera not available. Please allow permission or use HTTPS."
+      )
 
       setLoading(false)
 
@@ -78,16 +102,21 @@ export default function RegisterPage() {
   }
 
 
-  const openPrint = () => {
+  const stopScanner = async () => {
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      window.location.origin
+    if (scannerRef.current) {
 
-    window.open(
-      `${baseUrl}/print/${vehicleId}`,
-      '_blank'
-    )
+      try {
+
+        await scannerRef.current.stop()
+        await scannerRef.current.clear()
+
+      }
+      catch {}
+
+      scannerRef.current = null
+
+    }
 
   }
 
@@ -95,155 +124,85 @@ export default function RegisterPage() {
   return (
 
     <div style={{
-      padding: 30,
-      maxWidth: 600
+      padding: 20,
+      maxWidth: 500,
+      margin: 'auto'
     }}>
 
       <h1 style={{
-        color: "#0B1F3A",
-        marginBottom: 20
+        fontSize: 26,
+        fontWeight: 700,
+        marginBottom: 20,
+        color: "#0B1F3A"
       }}>
-        Register Vehicle
+        Scan Vehicle QR
       </h1>
 
 
-      <div style={{
-        background: "white",
-        padding: 25,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}>
+      <div
+        id="reader"
+        style={{
+          width: '100%',
+          minHeight: 300,
+          borderRadius: 12,
+          overflow: 'hidden',
+          border: '2px solid #0B1F3A',
+          background: "#000"
+        }}
+      />
 
 
-        <label>Plate Number</label>
-
-        <input
-          value={plateNumber}
-          onChange={(e) =>
-            setPlateNumber(e.target.value)
-          }
-          style={inputStyle}
-        />
-
-
-        <label>Car Model</label>
-
-        <input
-          value={carModel}
-          onChange={(e) =>
-            setCarModel(e.target.value)
-          }
-          style={inputStyle}
-        />
-
-
-        <label>Driver Name</label>
-
-        <input
-          value={driverName}
-          onChange={(e) =>
-            setDriverName(e.target.value)
-          }
-          style={inputStyle}
-        />
-
-
-        {error && (
-
-          <div style={{
-            color: "red",
-            marginBottom: 10
-          }}>
-            {error}
-          </div>
-
-        )}
-
-
-        <button
-          onClick={registerVehicle}
-          disabled={loading}
-          style={{
-            background: "#C9A227",
-            color: "white",
-            padding: "12px 20px",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontWeight: "bold",
-            width: "100%"
-          }}
-        >
-
-          {loading
-            ? "Creating Vehicle..."
-            : "Create Vehicle"}
-
-        </button>
-
-      </div>
-
-
-
-      {qrCode && (
+      {loading && (
 
         <div style={{
-          marginTop: 30,
-          textAlign: "center",
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+          marginTop: 15,
+          color: "#333",
+          fontSize: 16
         }}>
-
-          <h2 style={{
-            color: "#0B1F3A"
-          }}>
-            QR Code Generated
-          </h2>
-
-
-          <img
-            src={qrCode}
-            width={220}
-          />
-
-
-          <br /><br />
-
-
-          <button
-            onClick={openPrint}
-            style={{
-              background: "#0B1F3A",
-              color: "white",
-              padding: "10px 20px",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer"
-            }}
-          >
-            Print QR Label
-          </button>
-
+          Opening camera...
         </div>
+
+      )}
+
+
+      {error && (
+
+        <div style={{
+          marginTop: 15,
+          padding: 15,
+          background: "#ffe5e5",
+          color: "#cc0000",
+          borderRadius: 8,
+          fontWeight: 600
+        }}>
+          {error}
+        </div>
+
+      )}
+
+
+      {!started && !loading && (
+
+        <button
+          onClick={startScanner}
+          style={{
+            marginTop: 20,
+            width: "100%",
+            padding: 15,
+            fontSize: 18,
+            background: "#0B1F3A",
+            color: "white",
+            border: "none",
+            borderRadius: 8
+          }}
+        >
+          Start Camera
+        </button>
 
       )}
 
     </div>
 
   )
-
-}
-
-
-
-const inputStyle = {
-
-  width: "100%",
-  padding: 10,
-  marginBottom: 15,
-  borderRadius: 6,
-  border: "1px solid #ccc"
 
 }

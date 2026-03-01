@@ -74,3 +74,20 @@ body {
   }
 
 }
+body {
+  background: #f4f6f8;
+  color: #0B1F3A;
+}
+
+input {
+  color: #0B1F3A;
+  background: white;
+}
+
+h1, h2, h3 {
+  color: #0B1F3A;
+}
+
+button {
+  font-weight: bold;
+}
