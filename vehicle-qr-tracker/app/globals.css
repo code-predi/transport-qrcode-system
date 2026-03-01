@@ -1,93 +1,66 @@
-@import "tailwindcss";
+/* =========================
+   QR SCANNER VISIBILITY FIX
+   ========================= */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+#reader {
+  background: #ffffff !important;
+  border: 2px solid #0B1F3A !important;
+  border-radius: 12px !important;
+  padding: 10px !important;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Main scanner text */
+#reader * {
+  color: #0B1F3A !important;
+  font-weight: 600 !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Camera permission text */
+#reader__dashboard {
+  color: #0B1F3A !important;
+  background: #ffffff !important;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Buttons */
+#reader button {
+  background: #0B1F3A !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  padding: 10px 16px !important;
+  font-weight: 600 !important;
+  border: none !important;
 }
 
-
-@media print {
-
-  body * {
-    visibility: hidden;
-  }
-
-  #print-card, #print-card * {
-    visibility: visible;
-  }
-
-  #print-card {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
-
+/* Dropdown */
+#reader select {
+  background: #ffffff !important;
+  color: #0B1F3A !important;
+  border: 1px solid #0B1F3A !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
 }
 
-/* PRINT OPTIMIZATION */
-@media print {
-
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
-  body * {
-    visibility: hidden;
-  }
-
-  #print-container, #print-container * {
-    visibility: visible;
-  }
-
-  #print-container {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  @page {
-    size: auto;
-    margin: 0;
-  }
-
-}
-body {
-  background: #f4f6f8;
-  color: #0B1F3A;
+/* Scan region border */
+#reader__scan_region {
+  border: none !important;
 }
 
-input {
-  color: #0B1F3A;
-  background: white;
+/* Hide library branding */
+#reader__scan_region img {
+  opacity: 1 !important;
 }
 
-h1, h2, h3 {
-  color: #0B1F3A;
+/* Error messages */
+#reader__dashboard_section_csr span {
+  color: red !important;
 }
 
-button {
-  font-weight: bold;
+/* Mobile optimization */
+@media (max-width: 768px) {
+
+  #reader {
+    width: 100% !important;
+    min-height: 300px !important;
+  }
+
 }

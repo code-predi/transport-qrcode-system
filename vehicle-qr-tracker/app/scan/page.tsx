@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 export default function ScanPage() {
 
   const router = useRouter()
-
   const scannerRef = useRef<Html5Qrcode | null>(null)
 
   const [started, setStarted] = useState(false)
@@ -33,13 +32,25 @@ export default function ScanPage() {
       setLoading(true)
 
       const scanner = new Html5Qrcode("reader")
-
       scannerRef.current = scanner
+
+      // Get cameras first
+      const cameras = await Html5Qrcode.getCameras()
+
+      if (!cameras || cameras.length === 0) {
+        throw new Error("No camera found")
+      }
+
+      // Prefer back camera
+      const backCamera =
+        cameras.find(cam =>
+          cam.label.toLowerCase().includes("back") ||
+          cam.label.toLowerCase().includes("rear")
+        ) || cameras[cameras.length - 1]
 
       await scanner.start(
 
-        // FORCE BACK CAMERA
-        { facingMode: { exact: "environment" } },
+        backCamera.id,
 
         {
           fps: 10,
@@ -50,7 +61,7 @@ export default function ScanPage() {
           aspectRatio: 1
         },
 
-        // SUCCESS
+        // SUCCESS CALLBACK
         (decodedText) => {
 
           stopScanner()
@@ -58,27 +69,25 @@ export default function ScanPage() {
           try {
 
             const url = new URL(decodedText)
-
-            const vehicleId =
-              url.searchParams.get("vehicleId")
+            const vehicleId = url.searchParams.get("vehicleId")
 
             if (vehicleId) {
-
               router.push(`/scan?vehicleId=${vehicleId}`)
-
+            }
+            else {
+              alert("Invalid QR format")
             }
 
-          } catch {
-
+          }
+          catch {
             alert("Invalid QR code")
-
           }
 
         },
 
-        // REQUIRED ERROR CALLBACK
-        (err) => {
-          // ignore scanning errors
+        // ERROR CALLBACK (required)
+        (scanError) => {
+          // ignore scan frame errors
         }
 
       )
@@ -92,7 +101,7 @@ export default function ScanPage() {
       console.error(err)
 
       setError(
-        "Camera not available. Please allow permission or use HTTPS."
+        "Camera failed to start. Please allow camera permission and refresh."
       )
 
       setLoading(false)
@@ -104,19 +113,19 @@ export default function ScanPage() {
 
   const stopScanner = async () => {
 
-    if (scannerRef.current) {
+    try {
 
-      try {
+      if (scannerRef.current) {
 
         await scannerRef.current.stop()
         await scannerRef.current.clear()
 
-      }
-      catch {}
+        scannerRef.current = null
 
-      scannerRef.current = null
+      }
 
     }
+    catch {}
 
   }
 
@@ -147,7 +156,7 @@ export default function ScanPage() {
           borderRadius: 12,
           overflow: 'hidden',
           border: '2px solid #0B1F3A',
-          background: "#000"
+          background: "#ffffff"
         }}
       />
 
@@ -156,8 +165,9 @@ export default function ScanPage() {
 
         <div style={{
           marginTop: 15,
-          color: "#333",
-          fontSize: 16
+          color: "#0B1F3A",
+          fontSize: 16,
+          fontWeight: 600
         }}>
           Opening camera...
         </div>
@@ -193,7 +203,8 @@ export default function ScanPage() {
             background: "#0B1F3A",
             color: "white",
             border: "none",
-            borderRadius: 8
+            borderRadius: 8,
+            cursor: "pointer"
           }}
         >
           Start Camera
