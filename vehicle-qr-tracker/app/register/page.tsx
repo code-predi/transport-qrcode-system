@@ -55,7 +55,7 @@ export default function RegisterPage() {
         window.location.origin
 
       const qrUrl =
-        `${APP_URL}/scan?vehicleId=${data.id}`
+        `${APP_URL}/scan?vehicleId=${vehicleId}`
 
       const qrImage =
         await QRCode.toDataURL(qrUrl)
