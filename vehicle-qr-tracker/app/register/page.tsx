@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import QRCode from 'qrcode'
+import { APP_URL } from '@/lib/config'
 
 export default function RegisterPage() {
 
@@ -54,7 +55,7 @@ export default function RegisterPage() {
         window.location.origin
 
       const qrUrl =
-        `${baseUrl}/scan?vehicleId=${data.id}`
+        `${APP_URL}/scan?vehicleId=${data.id}`
 
       const qrImage =
         await QRCode.toDataURL(qrUrl)
