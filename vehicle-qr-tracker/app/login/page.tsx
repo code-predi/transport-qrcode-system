@@ -9,141 +9,190 @@ export default function LoginPage() {
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleLogin = async () => {
 
-    setLoading(true)
+  const login = async () => {
+
     setError('')
+    setLoading(true)
 
     try {
 
       const res = await fetch('/api/auth/login', {
-
         method: 'POST',
-
-        headers: {
-          'Content-Type': 'application/json'
-        },
-
-        body: JSON.stringify({
-          username,
-          password
-        })
-
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-
-        setError(data.error || "Login failed")
+        setError(data.error || 'Login failed')
         setLoading(false)
         return
-
       }
 
-      // redirect to dashboard
       router.push('/dashboard')
 
     }
     catch {
 
-      setError("Network error")
+      setError('Connection failed')
       setLoading(false)
 
     }
 
   }
 
+
+
   return (
 
     <div style={{
-
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      height: "100vh",
-      background: "#0B1F3A",
-      color: "white"
-
+      minHeight: '100vh',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #0B1F3A, #132F57)'
     }}>
 
+
+
+      {/* LOGIN CARD */}
+
       <div style={{
-
-        background: "#112B4A",
+        width: 400,
         padding: 40,
-        borderRadius: 10,
-        width: 350
-
+        borderRadius: 16,
+        background: '#ffffff',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.25)'
       }}>
 
-        <h1 style={{ marginBottom: 20 }}>
-          Sherullah QR - Transport Portal
-        </h1>
 
-        <h2 style={{ marginBottom: 20 }}>
-          Login
-        </h2>
 
+        {/* TITLE */}
+
+        <div style={{
+          textAlign: 'center',
+          marginBottom: 30
+        }}>
+
+          <div style={{
+            fontSize: 26,
+            fontWeight: 700,
+            color: '#0B1F3A'
+          }}>
+            Sherullah QR
+          </div>
+
+          <div style={{
+            fontSize: 18,
+            color: '#C6A01B',
+            fontWeight: 600,
+            marginTop: 5
+          }}>
+            Transport Portal
+          </div>
+
+        </div>
+
+
+
+        {/* USERNAME */}
 
         <input
-          placeholder="Username"
           value={username}
-          onChange={e => setUsername(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginBottom: 10
-          }}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Username"
+          style={inputStyle}
         />
 
+
+
+        {/* PASSWORD */}
 
         <input
           type="password"
-          placeholder="Password"
           value={password}
-          onChange={e => setPassword(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginBottom: 10
-          }}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          style={inputStyle}
         />
 
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: 12,
-            background: "#C9A227",
-            border: "none",
-            fontWeight: "bold",
-            cursor: "pointer"
-          }}
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
 
+        {/* ERROR */}
 
         {error && (
 
           <div style={{
-            color: "red",
-            marginTop: 10
+            color: '#cc0000',
+            marginBottom: 10,
+            fontWeight: 600
           }}>
             {error}
           </div>
 
         )}
 
+
+
+        {/* BUTTON */}
+
+        <button
+          onClick={login}
+          disabled={loading}
+          style={{
+
+            width: '100%',
+            padding: 14,
+            borderRadius: 10,
+            border: 'none',
+
+            background: '#C6A01B',
+            color: '#0B1F3A',
+
+            fontWeight: 700,
+            fontSize: 16,
+
+            cursor: 'pointer'
+          }}
+        >
+
+          {loading ? 'Signing in...' : 'Login'}
+
+        </button>
+
+
+
       </div>
+
 
     </div>
 
   )
 
 }
+
+
+
+/* ========================= */
+
+const inputStyle = {
+
+  width: '100%',
+  padding: 12,
+  marginBottom: 15,
+
+  borderRadius: 8,
+  border: '1px solid #ccc',
+
+  fontSize: 15,
+  outline: 'none',
+
+  background: '#f9f9f9',
+  color: '#000'
+
+} as const

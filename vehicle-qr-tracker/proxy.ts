@@ -7,23 +7,53 @@ export function proxy(req: NextRequest) {
 
   const path = req.nextUrl.pathname
 
-  // Allow login and auth routes always
-  if (
-    path.startsWith('/login') ||
-    path.startsWith('/api/auth/login')
-  ) {
-    return NextResponse.next()
+
+  const isLoggedIn = !!userId
+
+
+  // PUBLIC ROUTES
+  const publicRoutes = [
+    '/login',
+    '/api/auth/login'
+  ]
+
+
+  const isPublic =
+    publicRoutes.includes(path) ||
+    path.startsWith('/_next') ||
+    path.startsWith('/favicon.ico')
+
+
+  // If NOT logged in → block protected routes
+  if (!isLoggedIn && !isPublic) {
+
+    return NextResponse.redirect(
+      new URL('/login', req.url)
+    )
+
   }
 
-  // Protect dashboard and scan routes
-  if (
-    path.startsWith('/dashboard') ||
-    path.startsWith('/scan') ||
-    path.startsWith('/api/trips') ||
-    path.startsWith('/api/dashboard')
-  ) {
 
-    if (!userId) {
+  // If logged in → prevent access to login page
+  if (isLoggedIn && path === '/login') {
+
+    return NextResponse.redirect(
+      new URL('/dashboard', req.url)
+    )
+
+  }
+
+
+  // Optional: redirect root based on login
+  if (path === '/') {
+
+    if (isLoggedIn) {
+
+      return NextResponse.redirect(
+        new URL('/dashboard', req.url)
+      )
+
+    } else {
 
       return NextResponse.redirect(
         new URL('/login', req.url)
@@ -33,14 +63,23 @@ export function proxy(req: NextRequest) {
 
   }
 
+
   return NextResponse.next()
+
 }
 
+
+
 export const config = {
+
   matcher: [
-    '/dashboard/:path*',
-    '/scan/:path*',
-    '/api/trips/:path*',
-    '/api/dashboard/:path*'
+
+    /*
+      Protect everything except static files
+    */
+
+    '/((?!_next/static|_next/image|favicon.ico).*)'
+
   ]
+
 }
