@@ -1,58 +1,54 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-export default function CreateVehiclePage() {
+export default function AddVehiclePage() {
 
-  const [plateNumber, setPlateNumber] = useState("")
-  const [carModel, setCarModel] = useState("")
-  const [driverName, setDriverName] = useState("")
+  const router = useRouter()
+
+  const [plateNumber, setPlateNumber] = useState('')
+  const [carModel, setCarModel] = useState('')
+  const [driverName, setDriverName] = useState('')
   const [loading, setLoading] = useState(false)
 
   const createVehicle = async () => {
 
     if (!plateNumber || !carModel || !driverName) {
-
-      alert("Fill all fields")
+      alert("All fields required")
       return
-
     }
 
     setLoading(true)
 
-    const res = await fetch('/api/vehicles', {
+    try {
 
-      method: 'POST',
-
-      headers: {
-        'Content-Type': 'application/json'
-      },
-
-      body: JSON.stringify({
-        plateNumber,
-        carModel,
-        driverName,
+      const res = await fetch('/api/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plateNumber,
+          carModel,
+          driverName
+        })
       })
 
-    })
+      if (!res.ok) {
 
-    if (res.ok) {
+        const err = await res.json()
+        alert(err.error || "Failed to create vehicle")
 
-      const vehicle = await res.json()
+      } else {
 
-      alert("Vehicle created successfully")
+        alert("Vehicle created successfully")
 
-      window.open(`/print/${vehicle.id}`, '_blank')
+        router.push('/dashboard/vehicles')
 
-      setPlateNumber("")
-      setCarModel("")
-      setDriverName("")
+      }
 
-    } else {
+    } catch {
 
-      const err = await res.json()
-
-      alert(err.error || "Failed")
+      alert("Network error")
 
     }
 
@@ -62,55 +58,113 @@ export default function CreateVehiclePage() {
 
   return (
 
-    <div style={{ padding: 30 }}>
+    <div style={{
+      padding: 40,
+      maxWidth: 600
+    }}>
 
-      <h1>Create Vehicle</h1>
+      {/* Page Title */}
+      <h1 style={{
+        color: "#0B1F3A",
+        marginBottom: 30
+      }}>
+        Create Vehicle
+      </h1>
 
-      <div style={{ marginTop: 20 }}>
+
+      {/* Form Card */}
+      <div style={{
+        background: "white",
+        padding: 30,
+        borderRadius: 12,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        border: "1px solid #e0e0e0"
+      }}>
+
+
+        {/* Plate Number */}
+        <label style={{
+          fontWeight: "bold",
+          color: "#0B1F3A"
+        }}>
+          Plate Number
+        </label>
 
         <input
-          placeholder="Plate Number"
           value={plateNumber}
           onChange={e => setPlateNumber(e.target.value)}
+          style={inputStyle}
         />
 
-      </div>
 
-      <div style={{ marginTop: 10 }}>
+        {/* Car Model */}
+        <label style={labelStyle}>
+          Car Model
+        </label>
 
         <input
-          placeholder="Car Model"
           value={carModel}
           onChange={e => setCarModel(e.target.value)}
+          style={inputStyle}
         />
 
-      </div>
 
-      <div style={{ marginTop: 10 }}>
+        {/* Driver Name */}
+        <label style={labelStyle}>
+          Driver Name
+        </label>
 
         <input
-          placeholder="Driver Name"
           value={driverName}
           onChange={e => setDriverName(e.target.value)}
+          style={inputStyle}
         />
 
+
+        {/* Button */}
+        <button
+          onClick={createVehicle}
+          disabled={loading}
+          style={{
+            marginTop: 20,
+            width: "100%",
+            padding: 14,
+            fontSize: 16,
+            background: "#C8A951",
+            color: "white",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontWeight: "bold"
+          }}
+        >
+          {loading ? "Creating..." : "Create Vehicle"}
+        </button>
+
+
       </div>
-
-      <button
-        onClick={createVehicle}
-        disabled={loading}
-        style={{
-          marginTop: 20,
-          padding: 10
-        }}
-      >
-
-        {loading ? "Creating..." : "Create Vehicle"}
-
-      </button>
 
     </div>
 
   )
 
+}
+
+
+const labelStyle = {
+  marginTop: 15,
+  display: "block",
+  fontWeight: "bold",
+  color: "#0B1F3A"
+}
+
+const inputStyle = {
+  width: "100%",
+  padding: 12,
+  marginTop: 6,
+  borderRadius: 8,
+  border: "1px solid #ccc",
+  fontSize: 16,
+  color: "#0B1F3A",
+  background: "white"
 }
