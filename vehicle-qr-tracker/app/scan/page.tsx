@@ -79,7 +79,7 @@ export default function ScanPage() {
       const vehicleId = url.searchParams.get("vehicleId")
 
       if (vehicleId) {
-        router.push(`/scan?vehicleId=${vehicleId}`)
+        router.push(`/trip?vehicleId=${vehicleId}`)
       }
 
     } catch {}
