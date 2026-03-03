@@ -1,107 +1,93 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
+import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode'
 import { useRouter } from 'next/navigation'
 
 export default function ScanPage() {
 
   const router = useRouter()
 
-  // ✅ FIX: explicitly typed ref
   const scannerRef = useRef<Html5Qrcode | null>(null)
+  const mountedRef = useRef(false)
 
-  const [started, setStarted] = useState<boolean>(false)
-  const [error, setError] = useState<string>("")
-  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+
+    mountedRef.current = true
+
+    const startScanner = async () => {
+
+      try {
+
+        const scanner = new Html5Qrcode("reader")
+        scannerRef.current = scanner
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 280 },
+
+          (decodedText) => {
+
+            if (!mountedRef.current) return
+
+            handleScan(decodedText)
+
+          },
+
+          () => {}
+        )
+
+        if (!mountedRef.current) return
+
+        setLoading(false)
+
+      } catch (err) {
+
+        if (!mountedRef.current) return
+
+        console.error(err)
+        setError("Camera permission required.")
+        setLoading(false)
+
+      }
+
+    }
 
     startScanner()
 
     return () => {
-      stopScanner()
+
+      mountedRef.current = false
+
+      safeStopScanner()
+
     }
 
   }, [])
 
 
-  const startScanner = async (): Promise<void> => {
+  const handleScan = async (decodedText: string) => {
+
+    await safeStopScanner()
 
     try {
 
-      setError("")
-      setLoading(true)
+      const url = new URL(decodedText)
+      const vehicleId = url.searchParams.get("vehicleId")
 
-      // ✅ FIX: explicitly typed scanner
-      const scanner: Html5Qrcode = new Html5Qrcode("reader")
+      if (vehicleId) {
+        router.push(`/scan?vehicleId=${vehicleId}`)
+      }
 
-      scannerRef.current = scanner
-
-      await scanner.start(
-
-        // safer camera selection
-        { facingMode: "environment" },
-
-        {
-          fps: 10,
-          qrbox: { width: 280, height: 280 },
-          aspectRatio: 1
-        },
-
-        // success callback
-        (decodedText: string) => {
-
-          stopScanner()
-
-          try {
-
-            const url = new URL(decodedText)
-            const vehicleId = url.searchParams.get("vehicleId")
-
-            if (vehicleId) {
-
-              router.push(`/scan?vehicleId=${vehicleId}`)
-
-            } else {
-
-              alert("Invalid QR code")
-
-            }
-
-          } catch {
-
-            alert("Invalid QR format")
-
-          }
-
-        },
-
-        // required error callback
-        (_errorMessage: string) => {
-          // ignore scan frame errors
-        }
-
-      )
-
-      setStarted(true)
-      setLoading(false)
-
-    }
-    catch (err) {
-
-      console.error(err)
-
-      setError("Unable to access camera. Please allow permission.")
-
-      setLoading(false)
-
-    }
+    } catch {}
 
   }
 
 
-  const stopScanner = async (): Promise<void> => {
+  const safeStopScanner = async () => {
 
     const scanner = scannerRef.current
 
@@ -109,15 +95,22 @@ export default function ScanPage() {
 
     try {
 
-      await scanner.stop()
+      const state = scanner.getState()
+
+      if (
+        state === Html5QrcodeScannerState.SCANNING ||
+        state === Html5QrcodeScannerState.PAUSED
+      ) {
+        await scanner.stop()
+      }
+
       await scanner.clear()
 
+    } catch {
+      // completely swallow stop errors
     }
-    catch {}
 
     scannerRef.current = null
-
-    setStarted(false)
 
   }
 
@@ -127,70 +120,28 @@ export default function ScanPage() {
     <div style={{
       padding: 24,
       maxWidth: 500,
-      margin: "0 auto",
-      color: "#0B1F3A"
+      margin: "0 auto"
     }}>
 
-      <h1 style={{
-        fontSize: 26,
-        fontWeight: 700,
-        marginBottom: 20
-      }}>
-        Scan Vehicle QR
-      </h1>
-
+      <h1>Scan Vehicle QR</h1>
 
       <div
         id="reader"
         style={{
           width: "100%",
           height: 320,
-          borderRadius: 12,
-          border: "2px solid #C6A85A",
-          background: "#000",
-          overflow: "hidden"
+          borderRadius: 14,
+          border: "3px solid var(--gold)",
+          background: "#000"
         }}
       />
 
-
-      {loading && (
-        <div style={{ marginTop: 15 }}>
-          Opening camera...
-        </div>
-      )}
-
+      {loading && <p>Opening camera...</p>}
 
       {error && (
-        <div style={{
-          marginTop: 15,
-          padding: 12,
-          background: "#FFECEC",
-          color: "#9B1C1C",
-          borderRadius: 8
-        }}>
+        <p style={{ color: "red" }}>
           {error}
-        </div>
-      )}
-
-
-      {!started && !loading && (
-        <button
-          onClick={startScanner}
-          style={{
-            marginTop: 20,
-            width: "100%",
-            padding: 14,
-            fontSize: 16,
-            background: "#C6A85A",
-            color: "#0B1F3A",
-            border: "none",
-            borderRadius: 10,
-            fontWeight: 600,
-            cursor: "pointer"
-          }}
-        >
-          Start Camera
-        </button>
+        </p>
       )}
 
     </div>
